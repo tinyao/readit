@@ -12,9 +12,10 @@
     "dev": "node scripts/build-site.js && npx serve docs"
   },
   "dependencies": {
-    "openai": "^4.80.0",
     "ali-oss": "^6.21.0",
-    "marked": "^15.0.0"
+    "https-proxy-agent": "^7.0.6",
+    "marked": "^15.0.0",
+    "openai": "^4.80.0"
   },
   "devDependencies": {
     "dotenv": "^16.4.0"

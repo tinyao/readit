@@ -1,12 +1,18 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
 import OpenAI from 'openai';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { readJSON, writeJSON, resolveDataPath } from './lib/utils.js';
 
-const openai = new OpenAI({
+const proxy = process.env.https_proxy || process.env.HTTPS_PROXY;
+const openaiOptions = {
   baseURL: 'https://openrouter.ai/api/v1',
   apiKey: process.env.OPENROUTER_API_KEY,
-});
+};
+if (proxy) {
+  openaiOptions.httpAgent = new HttpsProxyAgent(proxy);
+}
+const openai = new OpenAI(openaiOptions);
 
 async function fetchWithJina(url) {
   const jinaUrl = `https://r.jina.ai/${url}`;
@@ -31,10 +37,39 @@ function extractSiteName(url) {
   return hostname.replace(/^www\./, '');
 }
 
+async function claudeCleanContent(markdown) {
+  const prompt = `Extract only the main article/post content from the following Markdown. Remove:
+- Site navigation menus, breadcrumbs, and header links
+- Footer sections (copyright, site links, social media links, related articles)
+- Cookie notices, login prompts, share buttons
+- "Table of contents" sidebar navigation
+- Author bios and "about the author" sections at the end
+- "Related articles" or "recommended reading" sections
+
+Keep:
+- The article title (as heading)
+- Author name and date (if inline with article)
+- All article body content, images, code blocks, blockquotes
+- Any inline links within the article text
+
+Output clean Markdown only, no explanations.
+
+Content:
+${markdown}`;
+
+  const completion = await openai.chat.completions.create({
+    model: 'anthropic/claude-sonnet-4.6',
+    max_tokens: 16384,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return completion.choices[0].message.content;
+}
+
 async function claudeSummarize(article, markdown) {
-  const prompt = `You are analyzing an article. Return a JSON object with exactly these fields:
+  const prompt = `You are analyzing an article. Return ONLY a valid JSON object (no markdown fences, no extra text) with exactly these fields:
 - "language": the article's primary language as ISO 639-1 code (e.g. "en", "zh", "ja")
-- "summary": a Chinese summary of the article in 3-5 sentences
+- "summary": a Chinese summary of the article in 3-5 sentences. Use plain text, no special characters or unescaped quotes.
 
 Article title: ${article.title || 'Unknown'}
 Article content (first 8000 chars):
@@ -87,7 +122,7 @@ for (const article of articles) {
       const title = extractTitle(markdown) || article.url;
       const siteName = extractSiteName(article.url);
 
-      // Save markdown
+      // Save raw markdown (will be cleaned by Claude in Stage B)
       const mdPath = resolveDataPath(`data/articles/${article.id}.md`);
       await mkdir(dirname(mdPath), { recursive: true });
       await writeFile(mdPath, markdown, 'utf-8');
@@ -113,7 +148,12 @@ for (const article of articles) {
     console.log(`Processing: ${article.id} — ${article.title}`);
     try {
       const mdPath = resolveDataPath(`data/articles/${article.id}.md`);
-      const markdown = await readFile(mdPath, 'utf-8');
+      let markdown = await readFile(mdPath, 'utf-8');
+
+      // Call 0: Claude-based deep content cleaning
+      console.log(`  Cleaning content...`);
+      markdown = await claudeCleanContent(markdown);
+      await writeFile(mdPath, markdown, 'utf-8');
 
       // Call 1: language detection + summary
       const analysis = await claudeSummarize(article, markdown);
