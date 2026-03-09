@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Curation — Readit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">Readit</a></h1>
+    <nav>
+      <a href="index.html">Articles</a>
+      <a href="curation.html" class="active">Curation</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Daily Curation</h2>
+    <div id="episodes"></div>
+    <p class="empty" id="empty-msg">No episodes yet.</p>
+  </main>
+  <script>
+    fetch('data/episodes.json')
+      .then(r => r.json())
+      .then(episodes => {
+        if (!episodes.length) return;
+        document.getElementById('empty-msg').style.display = 'none';
+        const container = document.getElementById('episodes');
+        episodes.sort((a, b) => new Date(b.date) - new Date(a.date));
+        episodes.forEach(ep => {
+          const div = document.createElement('div');
+          div.className = 'episode';
+          div.innerHTML = `
+            <h3>${ep.title || ep.date}</h3>
+            <div class="audio-player">
+              <audio controls preload="metadata">
+                <source src="${ep.audioUrl}" type="audio/mpeg">
+              </audio>
+              <div class="speed-controls">
+                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=0.5">0.5x</button>
+                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=1">1x</button>
+                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=1.5">1.5x</button>
+                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=2">2x</button>
+              </div>
+            </div>
+            <details>
+              <summary>Show summary</summary>
+              <div class="episode-summary">${ep.summary || ''}</div>
+            </details>
+            <div class="episode-articles">
+              ${(ep.articleIds || []).map(id =>
+                `<a href="article.html?id=${id}">${id}</a>`
+              ).join(' · ')}
+            </div>`;
+          container.appendChild(div);
+        });
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

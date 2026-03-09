@@ -1,0 +1,22 @@
+{
+  "name": "readit",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Personal read-it-later system on GitHub infrastructure",
+  "scripts": {
+    "save": "node scripts/save-article.js",
+    "process": "node scripts/process-articles.js",
+    "build": "node scripts/build-site.js",
+    "curate": "node scripts/daily-curation.js",
+    "dev": "node scripts/build-site.js && npx serve site"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "ali-oss": "^6.21.0",
+    "marked": "^15.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.0"
+  }
+}

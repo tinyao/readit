@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading... — Readit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">Readit</a></h1>
+    <nav>
+      <a href="index.html">Articles</a>
+      <a href="curation.html">Curation</a>
+    </nav>
+  </header>
+  <main>
+    <article id="article">
+      <div class="article-header">
+        <h2 id="article-title">Loading...</h2>
+        <div class="meta" id="article-meta"></div>
+        <div class="lang-toggle" id="lang-toggle" style="display:none">
+          <button class="lang-btn active" data-mode="bilingual">双语</button>
+          <button class="lang-btn" data-mode="english">English</button>
+          <button class="lang-btn" data-mode="chinese">中文</button>
+        </div>
+      </div>
+      <div id="article-content" class="article-content bilingual"></div>
+    </article>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+
+    if (!id) {
+      document.getElementById('article-title').textContent = 'Article not found';
+    } else {
+      fetch(`data/articles/${id}.json`)
+        .then(r => r.json())
+        .then(article => {
+          document.title = `${article.title} — Readit`;
+          document.getElementById('article-title').textContent = article.title;
+
+          const date = new Date(article.savedAt).toLocaleDateString('zh-CN');
+          document.getElementById('article-meta').innerHTML =
+            `<span class="site">${article.siteName || ''}</span>
+             <span class="date">${date}</span>
+             <a href="${article.url}" target="_blank" rel="noopener">Original</a>`;
+
+          // Use translated version if available, otherwise original
+          const content = article.zhContentHtml || article.contentHtml;
+          document.getElementById('article-content').innerHTML = content;
+
+          // Show language toggle for bilingual content
+          if (article.zhContentHtml) {
+            const toggle = document.getElementById('lang-toggle');
+            toggle.style.display = 'flex';
+
+            const contentEl = document.getElementById('article-content');
+            const saved = localStorage.getItem('readit-lang-mode');
+            if (saved) {
+              contentEl.className = `article-content ${saved}`;
+              toggle.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.mode === saved);
+              });
+            }
+
+            toggle.addEventListener('click', e => {
+              if (!e.target.matches('.lang-btn')) return;
+              const mode = e.target.dataset.mode;
+              toggle.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+              e.target.classList.add('active');
+              contentEl.className = `article-content ${mode}`;
+              localStorage.setItem('readit-lang-mode', mode);
+            });
+          }
+        })
+        .catch(() => {
+          document.getElementById('article-title').textContent = 'Failed to load article';
+        });
+    }
+  </script>
+</body>
+</html>

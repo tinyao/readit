@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Readit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">Readit</a></h1>
+    <nav>
+      <a href="index.html" class="active">Articles</a>
+      <a href="curation.html">Curation</a>
+    </nav>
+  </header>
+  <main>
+    <div class="filters">
+      <button class="filter active" data-filter="all">All</button>
+      <button class="filter" data-filter="week">Week</button>
+      <button class="filter" data-filter="month">Month</button>
+    </div>
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Search articles..." />
+    </div>
+    <ul class="article-list">
+      
+    </ul>
+    <p class="empty">No articles yet.</p>
+  </main>
+  <script>
+    const filters = document.querySelectorAll('.filter');
+    const items = document.querySelectorAll('.article-item');
+    const searchInput = document.getElementById('search');
+
+    function applyFilters() {
+      const activeFilter = document.querySelector('.filter.active').dataset.filter;
+      const query = searchInput.value.toLowerCase().trim();
+      const now = new Date();
+
+      items.forEach(item => {
+        const savedAt = new Date(item.dataset.savedAt);
+        const diffDays = (now - savedAt) / (1000 * 60 * 60 * 24);
+
+        let timeVisible = true;
+        if (activeFilter === 'week') timeVisible = diffDays <= 7;
+        if (activeFilter === 'month') timeVisible = diffDays <= 30;
+
+        let searchVisible = true;
+        if (query) {
+          const text = item.textContent.toLowerCase();
+          searchVisible = text.includes(query);
+        }
+
+        item.style.display = (timeVisible && searchVisible) ? '' : 'none';
+      });
+    }
+
+    filters.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filters.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilters();
+      });
+    });
+
+    let debounceTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyFilters, 200);
+    });
+  </script>
+</body>
+</html>
