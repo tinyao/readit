@@ -1,8 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import OSS from 'ali-oss';
 import { readJSON, writeJSON } from './lib/utils.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
+const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
@@ -13,8 +16,8 @@ async function generateCurationText(articles) {
     `${i + 1}. 《${a.title}》(${a.siteName})\n   ${a.summary}`
   ).join('\n\n');
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const completion = await openai.chat.completions.create({
+    model: 'anthropic/claude-sonnet-4.6',
     max_tokens: 2048,
     messages: [{
       role: 'user',
@@ -30,7 +33,7 @@ ${articleSummaries}`,
     }],
   });
 
-  return message.content[0].text;
+  return completion.choices[0].message.content;
 }
 
 async function generateAudio(text) {

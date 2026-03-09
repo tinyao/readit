@@ -58,7 +58,7 @@ site/              — Static HTML output (GitHub Pages root)
 
 | Secret | Service |
 |--------|---------|
-| CLAUDE_API_KEY | Claude API (Sonnet) — summaries, translation, curation |
+| OPENROUTER_API_KEY | OpenRouter API (routes to Claude Sonnet) — summaries, translation, curation |
 | OPENAI_API_KEY | OpenAI TTS API — podcast audio |
 | OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET, OSS_REGION, OSS_BUCKET | Alibaba Cloud OSS — audio storage |
 

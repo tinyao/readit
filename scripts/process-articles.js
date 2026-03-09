@@ -1,9 +1,12 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { readJSON, writeJSON, resolveDataPath } from './lib/utils.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
+const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 async function fetchWithJina(url) {
   const jinaUrl = `https://r.jina.ai/${url}`;
@@ -37,13 +40,13 @@ Article title: ${article.title || 'Unknown'}
 Article content (first 8000 chars):
 ${markdown.slice(0, 8000)}`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const completion = await openai.chat.completions.create({
+    model: 'anthropic/claude-sonnet-4.6',
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = message.content[0].text;
+  const text = completion.choices[0].message.content;
   // Extract JSON from response
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Claude did not return valid JSON');
@@ -62,13 +65,13 @@ Rules:
 Article:
 ${markdown.slice(0, 12000)}`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const completion = await openai.chat.completions.create({
+    model: 'anthropic/claude-sonnet-4.6',
     max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   });
 
-  return message.content[0].text;
+  return completion.choices[0].message.content;
 }
 
 // Main processing
