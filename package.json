@@ -9,7 +9,7 @@
     "process": "node scripts/process-articles.js",
     "build": "node scripts/build-site.js",
     "curate": "node scripts/daily-curation.js",
-    "dev": "node scripts/build-site.js && npx serve site"
+    "dev": "node scripts/build-site.js && npx serve docs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

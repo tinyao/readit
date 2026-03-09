@@ -568,31 +568,31 @@ const articles = await readJSON('data/articles.json');
 const episodes = await readJSON('data/episodes.json');
 
 // Ensure output dirs
-await mkdir(resolveDataPath('site/data/articles'), { recursive: true });
+await mkdir(resolveDataPath('docs/data/articles'), { recursive: true });
 
 // Build per-article JSON files
 for (const article of articles.filter(a => a.status === 'ready')) {
   const data = await buildArticleData(article);
-  const outPath = resolveDataPath(`site/data/articles/${article.id}.json`);
+  const outPath = resolveDataPath(`docs/data/articles/${article.id}.json`);
   await writeFile(outPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 // Write site data indexes
 await writeFile(
-  resolveDataPath('site/data/articles.json'),
+  resolveDataPath('docs/data/articles.json'),
   JSON.stringify(articles, null, 2),
   'utf-8'
 );
 await writeFile(
-  resolveDataPath('site/data/episodes.json'),
+  resolveDataPath('docs/data/episodes.json'),
   JSON.stringify(episodes, null, 2),
   'utf-8'
 );
 
 // Generate HTML pages
-await writeFile(resolveDataPath('site/index.html'), generateIndexHTML(articles, episodes), 'utf-8');
-await writeFile(resolveDataPath('site/article.html'), generateArticleHTML(), 'utf-8');
-await writeFile(resolveDataPath('site/curation.html'), generateCurationHTML(), 'utf-8');
-await writeFile(resolveDataPath('site/style.css'), generateCSS(), 'utf-8');
+await writeFile(resolveDataPath('docs/index.html'), generateIndexHTML(articles, episodes), 'utf-8');
+await writeFile(resolveDataPath('docs/article.html'), generateArticleHTML(), 'utf-8');
+await writeFile(resolveDataPath('docs/curation.html'), generateCurationHTML(), 'utf-8');
+await writeFile(resolveDataPath('docs/style.css'), generateCSS(), 'utf-8');
 
 console.log(`Built site: ${articles.filter(a => a.status === 'ready').length} articles, ${episodes.length} episodes`);
