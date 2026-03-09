@@ -41,7 +41,7 @@ Article content (first 8000 chars):
 ${markdown.slice(0, 8000)}`;
 
   const completion = await openai.chat.completions.create({
-    model: 'anthropic/claude-sonnet-4',
+    model: 'anthropic/claude-sonnet-4.6',
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -66,7 +66,7 @@ Article:
 ${markdown.slice(0, 12000)}`;
 
   const completion = await openai.chat.completions.create({
-    model: 'anthropic/claude-sonnet-4',
+    model: 'anthropic/claude-sonnet-4.6',
     max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   });

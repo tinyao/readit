@@ -17,7 +17,7 @@ async function generateCurationText(articles) {
   ).join('\n\n');
 
   const completion = await openai.chat.completions.create({
-    model: 'anthropic/claude-sonnet-4',
+    model: 'anthropic/claude-sonnet-4.6',
     max_tokens: 2048,
     messages: [{
       role: 'user',
