@@ -8,5 +8,15 @@
     "title": "https://x.com/levie/status/2030714592238956960",
     "siteName": "x.com",
     "fetchedAt": "2026-03-09T05:21:05.468Z"
+  },
+  {
+    "id": "20260309-42079a",
+    "url": "https://openai.com/zh-Hans-CN/index/harness-engineering/",
+    "sourceType": "web",
+    "status": "fetched",
+    "savedAt": "2026-03-09T05:21:56.454Z",
+    "title": "https://openai.com/zh-Hans-CN/index/harness-engineering/",
+    "siteName": "openai.com",
+    "fetchedAt": "2026-03-09T05:22:10.461Z"
   }
 ]
