@@ -12,7 +12,7 @@
     "dev": "node scripts/build-site.js && npx serve docs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "openai": "^4.80.0",
     "ali-oss": "^6.21.0",
     "marked": "^15.0.0"
   },
