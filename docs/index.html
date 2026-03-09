@@ -3,39 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Readit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <title>Readit</title>
 </head>
 <body>
   <header>
-    <h1><a href="/">Readit</a></h1>
+    <a href="/" class="logo">Readit</a>
     <nav>
       <a href="index.html" class="active">Articles</a>
       <a href="curation.html">Curation</a>
     </nav>
   </header>
   <main>
-    <div class="filters">
-      <button class="filter active" data-filter="all">All</button>
-      <button class="filter" data-filter="week">Week</button>
-      <button class="filter" data-filter="month">Month</button>
-    </div>
-    <div class="search-box">
-      <input type="text" id="search" placeholder="Search articles..." />
+    <div class="toolbar">
+      <div class="filters">
+        <button class="filter active" data-filter="all">All</button>
+        <button class="filter" data-filter="week">This Week</button>
+        <button class="filter" data-filter="month">This Month</button>
+      </div>
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search" placeholder="Search..." />
+      </div>
     </div>
     <ul class="article-list">
-      <li class="article-item" data-saved-at="2026-03-09T05:21:56.454Z">
-      <a href="article.html?id=20260309-42079a">https://openai.com/zh-Hans-CN/index/harness-engineering/</a>
-      <div class="meta">
-        <span class="site">openai.com</span>
-        <span class="date">2026/3/9</span>
-        
-      </div>
-      <p class="summary">这篇文章介绍了OpenAI工程团队在过去五个月中进行的一项实验：使用Codex智能体构建一款软件产品，全程没有人工编写任何代码，仅由三名工程师组成的团队完成了约一百万行代码的项目，效率约为传统手工编码的10倍。文章详细描述了团队如何重新定义工程师角色，将工作重心从编写代码转向系统设计、架构规划和构建反馈回路，以最大化智能体的工作效率。团队还探索了如何提高应用程序对智能体的可读性，例如接入Chrome DevTools协议和本地可观测性堆栈，使Codex能够自主复现错误、验证修复。在代码仓库管理方面，团队将仓库设为记录系统，用结构化的文档目录替代庞大的单一指令文件，实现渐进式信息披露。文章总结了在智能体优先开发模式下的核心经验：将尽可能多的上下文信息以版本化文档的形式存入代码仓库，是确保智能体可靠工作的关键。</p>
-    </li>
+      <li class="article-item" data-saved-at="2026-03-09T05:21:56.454Z" style="animation-delay: 0ms">
+        <div class="article-date">
+          <span class="day">9</span>
+          <span class="month-year">Mar 2026</span>
+        </div>
+        <div class="article-body">
+          <a class="article-title" href="article.html?id=20260309-42079a">https://openai.com/zh-Hans-CN/index/harness-engineering/</a>
+          <div class="meta">
+            <span class="site">openai.com</span>
+            
+          </div>
+          <p class="summary">这篇文章介绍了OpenAI工程团队在过去五个月中进行的一项实验：使用Codex智能体构建一款软件产品，全程没有人工编写任何代码，仅由三名工程师组成的团队完成了约一百万行代码的项目，效率约为传统手工编码的10倍。文章详细描述了团队如何重新定义工程师角色，将工作重心从编写代码转向系统设计、架构规划和构建反馈回路，以最大化智能体的工作效率。团队还探索了如何提高应用程序对智能体的可读性，例如接入Chrome DevTools协议和本地可观测性堆栈，使Codex能够自主复现错误、验证修复。在代码仓库管理方面，团队将仓库设为记录系统，用结构化的文档目录替代庞大的单一指令文件，实现渐进式信息披露。文章总结了在智能体优先开发模式下的核心经验：将尽可能多的上下文信息以版本化文档的形式存入代码仓库，是确保智能体可靠工作的关键。</p>
+        </div>
+      </li>
     </ul>
     
   </main>
+  <footer>
+    <span class="footer-count">1 article saved</span>
+  </footer>
   <script>
     const filters = document.querySelectorAll('.filter');
     const items = document.querySelectorAll('.article-item');
