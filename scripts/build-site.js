@@ -1,34 +1,5 @@
-import { readFile, writeFile, mkdir, access } from 'fs/promises';
-import { dirname } from 'path';
-import { marked } from 'marked';
+import { writeFile, mkdir } from 'fs/promises';
 import { readJSON, resolveDataPath } from './lib/utils.js';
-
-async function fileExists(path) {
-  try { await access(path); return true; } catch { return false; }
-}
-
-async function buildArticleData(article) {
-  const mdPath = resolveDataPath(`data/articles/${article.id}.md`);
-  const zhPath = resolveDataPath(`data/articles/${article.id}.zh.md`);
-
-  let contentHtml = '';
-  let zhContentHtml = '';
-
-  if (await fileExists(mdPath)) {
-    const md = await readFile(mdPath, 'utf-8');
-    contentHtml = marked(md);
-  }
-  if (await fileExists(zhPath)) {
-    const zhMd = await readFile(zhPath, 'utf-8');
-    zhContentHtml = marked(zhMd);
-  }
-
-  return {
-    ...article,
-    contentHtml,
-    zhContentHtml: zhContentHtml || undefined,
-  };
-}
 
 const HEAD_COMMON = `<meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,7 +8,15 @@ const HEAD_COMMON = `<meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">`;
 
-function generateIndexHTML(articles, episodes) {
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function generateIndexHTML(articles) {
   const readyArticles = articles
     .filter(a => a.status === 'ready')
     .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
@@ -49,18 +28,12 @@ function generateIndexHTML(articles, episodes) {
     const month = monthNames[date.getMonth()];
     const year = date.getFullYear();
     return `<li class="article-item" data-saved-at="${a.savedAt}" style="animation-delay: ${i * 60}ms">
-        <div class="article-date">
-          <span class="day">${day}</span>
-          <span class="month-year">${month} ${year}</span>
-        </div>
-        <div class="article-body">
           <a class="article-title" href="article.html?id=${a.id}">${escapeHtml(a.title || a.url)}</a>
           <div class="meta">
+            <span class="date">${month} ${day}, ${year}</span>
+            <span class="sep">·</span>
             <span class="site">${escapeHtml(a.siteName || '')}</span>
-            ${a.language && a.language !== 'zh' ? `<span class="lang">${a.language.toUpperCase()}</span>` : ''}
           </div>
-          ${a.summary ? `<p class="summary">${escapeHtml(a.summary)}</p>` : ''}
-        </div>
       </li>`;
   }).join('\n');
 
@@ -73,10 +46,6 @@ function generateIndexHTML(articles, episodes) {
 <body>
   <header>
     <a href="/" class="logo">Readit</a>
-    <nav>
-      <a href="index.html" class="active">Articles</a>
-      <a href="curation.html">Curation</a>
-    </nav>
   </header>
   <main>
     <div class="toolbar">
@@ -150,28 +119,20 @@ function generateArticleHTML() {
 <head>
   ${HEAD_COMMON}
   <title>Loading... — Readit</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><\/script>
 </head>
 <body class="article-page">
   <header>
     <a href="/" class="logo">Readit</a>
-    <nav>
-      <a href="index.html">Articles</a>
-      <a href="curation.html">Curation</a>
-    </nav>
   </header>
   <main>
     <article id="article">
       <div class="article-header">
         <h1 id="article-title" class="loading-text">Loading...</h1>
         <div class="meta" id="article-meta"></div>
-        <div class="lang-toggle" id="lang-toggle" style="display:none">
-          <button class="lang-btn active" data-mode="bilingual">Bilingual</button>
-          <button class="lang-btn" data-mode="english">English</button>
-          <button class="lang-btn" data-mode="chinese">Chinese</button>
-        </div>
       </div>
       <div class="article-divider"></div>
-      <div id="article-content" class="article-content bilingual"></div>
+      <div id="article-content" class="article-content"></div>
     </article>
   </main>
   <footer>
@@ -185,9 +146,15 @@ function generateArticleHTML() {
       document.getElementById('article-title').textContent = 'Article not found';
       document.getElementById('article-title').classList.remove('loading-text');
     } else {
-      fetch(\`data/articles/\${id}.json\`)
-        .then(r => r.json())
-        .then(article => {
+      // Fetch article metadata and markdown in parallel
+      Promise.all([
+        fetch('articles.json').then(r => r.json()),
+        fetch(\`articles/\${id}.md\`).then(r => r.text())
+      ])
+        .then(([articles, markdown]) => {
+          const article = articles.find(a => a.id === id);
+          if (!article) throw new Error('Not found');
+
           document.title = \`\${article.title} — Readit\`;
           const titleEl = document.getElementById('article-title');
           titleEl.textContent = article.title;
@@ -201,31 +168,7 @@ function generateArticleHTML() {
              <span class="sep">·</span>
              <a href="\${article.url}" target="_blank" rel="noopener">Original</a>\`;
 
-          const content = article.zhContentHtml || article.contentHtml;
-          document.getElementById('article-content').innerHTML = content;
-
-          if (article.zhContentHtml) {
-            const toggle = document.getElementById('lang-toggle');
-            toggle.style.display = 'flex';
-
-            const contentEl = document.getElementById('article-content');
-            const saved = localStorage.getItem('readit-lang-mode');
-            if (saved) {
-              contentEl.className = \`article-content \${saved}\`;
-              toggle.querySelectorAll('.lang-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.mode === saved);
-              });
-            }
-
-            toggle.addEventListener('click', e => {
-              if (!e.target.matches('.lang-btn')) return;
-              const mode = e.target.dataset.mode;
-              toggle.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-              e.target.classList.add('active');
-              contentEl.className = \`article-content \${mode}\`;
-              localStorage.setItem('readit-lang-mode', mode);
-            });
-          }
+          document.getElementById('article-content').innerHTML = marked.parse(markdown);
         })
         .catch(() => {
           const titleEl = document.getElementById('article-title');
@@ -233,86 +176,7 @@ function generateArticleHTML() {
           titleEl.classList.remove('loading-text');
         });
     }
-  </script>
-</body>
-</html>`;
-}
-
-function generateCurationHTML() {
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  ${HEAD_COMMON}
-  <title>Daily Curation — Readit</title>
-</head>
-<body>
-  <header>
-    <a href="/" class="logo">Readit</a>
-    <nav>
-      <a href="index.html">Articles</a>
-      <a href="curation.html" class="active">Curation</a>
-    </nav>
-  </header>
-  <main>
-    <div class="page-title-row">
-      <h1 class="page-title">Daily Curation</h1>
-      <p class="page-subtitle">A curated audio digest of your saved readings</p>
-    </div>
-    <div id="episodes"></div>
-    <p class="empty" id="empty-msg">No episodes yet. Your first digest will appear after saving some articles.</p>
-  </main>
-  <footer>
-    <a href="index.html" class="back-link">Back to articles</a>
-  </footer>
-  <script>
-    fetch('data/episodes.json')
-      .then(r => r.json())
-      .then(episodes => {
-        if (!episodes.length) return;
-        document.getElementById('empty-msg').style.display = 'none';
-        const container = document.getElementById('episodes');
-        episodes.sort((a, b) => new Date(b.date) - new Date(a.date));
-        episodes.forEach((ep, i) => {
-          const div = document.createElement('div');
-          div.className = 'episode';
-          div.style.animationDelay = (i * 80) + 'ms';
-          const epDate = new Date(ep.date);
-          const dateStr = epDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', year: 'numeric' });
-          div.innerHTML = \`
-            <div class="episode-header">
-              <h3>\${ep.title || dateStr}</h3>
-              <span class="episode-date">\${dateStr}</span>
-            </div>
-            <div class="audio-player">
-              <audio controls preload="metadata">
-                <source src="\${ep.audioUrl}" type="audio/mpeg">
-              </audio>
-              <div class="speed-controls">
-                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=0.75">0.75x</button>
-                <button class="speed-active" onclick="this.closest('.audio-player').querySelector('audio').playbackRate=1">1x</button>
-                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=1.25">1.25x</button>
-                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=1.5">1.5x</button>
-                <button onclick="this.closest('.audio-player').querySelector('audio').playbackRate=2">2x</button>
-              </div>
-            </div>
-            \${ep.summary ? \`<div class="episode-summary">\${ep.summary}</div>\` : ''}
-            <div class="episode-articles">
-              \${(ep.articleIds || []).map(id =>
-                \`<a href="article.html?id=\${id}" class="episode-link">\${id}</a>\`
-              ).join('')}
-            </div>\`;
-          container.appendChild(div);
-        });
-        // speed button click handling
-        container.addEventListener('click', e => {
-          if (!e.target.matches('.speed-controls button')) return;
-          const controls = e.target.closest('.speed-controls');
-          controls.querySelectorAll('button').forEach(b => b.classList.remove('speed-active'));
-          e.target.classList.add('speed-active');
-        });
-      })
-      .catch(() => {});
-  </script>
+  <\/script>
 </body>
 </html>`;
 }
@@ -339,11 +203,9 @@ function generateCSS() {
   --accent: #c45d3e;
   --accent-hover: #a84b30;
   --accent-subtle: rgba(196, 93, 62, 0.08);
-  --card-bg: #f5f1ed;
   --blockquote-bg: #f0ece7;
   --blockquote-border: #d4cdc5;
   --shadow-sm: 0 1px 2px rgba(44, 40, 37, 0.04);
-  --shadow-md: 0 4px 12px rgba(44, 40, 37, 0.06);
   --radius: 8px;
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -359,11 +221,9 @@ function generateCSS() {
     --accent: #e07a5c;
     --accent-hover: #e99479;
     --accent-subtle: rgba(224, 122, 92, 0.1);
-    --card-bg: #242120;
     --blockquote-bg: #282422;
     --blockquote-border: #3d3733;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -411,30 +271,6 @@ header {
 }
 .logo:hover {
   color: var(--accent);
-}
-
-nav {
-  display: flex;
-  gap: 1.5rem;
-}
-nav a {
-  font-size: 0.875rem;
-  font-weight: 400;
-  color: var(--text-secondary);
-  text-decoration: none;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  padding-bottom: 2px;
-  border-bottom: 1.5px solid transparent;
-  transition: all var(--transition);
-}
-nav a:hover {
-  color: var(--text);
-}
-nav a.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-  font-weight: 500;
 }
 
 /* ---- Main ---- */
@@ -531,7 +367,7 @@ main {
 
 .article-item {
   display: flex;
-  gap: 1.25rem;
+  flex-direction: column;
   padding: 1.25rem 0;
   border-bottom: 1px solid var(--border);
   animation: fadeSlideIn 0.4s ease-out both;
@@ -548,35 +384,6 @@ main {
   border-radius: var(--radius);
 }
 
-.article-date {
-  flex-shrink: 0;
-  width: 3.5rem;
-  text-align: right;
-  padding-top: 0.15rem;
-}
-.article-date .day {
-  display: block;
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  font-weight: 300;
-  line-height: 1;
-  color: var(--text);
-  letter-spacing: -0.02em;
-}
-.article-date .month-year {
-  display: block;
-  font-size: 0.65rem;
-  color: var(--text-tertiary);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-top: 0.2rem;
-}
-
-.article-body {
-  flex: 1;
-  min-width: 0;
-}
-
 .article-title {
   font-family: var(--font-serif);
   font-size: 1.1rem;
@@ -586,6 +393,7 @@ main {
   text-decoration: none;
   transition: color var(--transition);
   display: block;
+  margin-bottom: 0.3rem;
 }
 .article-title:hover {
   color: var(--accent);
@@ -610,26 +418,6 @@ main {
 }
 .meta a:hover {
   color: var(--accent-hover);
-}
-.lang {
-  background: var(--accent-subtle);
-  color: var(--accent);
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.summary {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-top: 0.5rem;
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .empty {
@@ -671,31 +459,6 @@ main {
   background: var(--accent);
   margin-bottom: 2rem;
   border-radius: 1px;
-}
-
-.lang-toggle {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 1rem;
-}
-.lang-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 0.3rem 0.75rem;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  transition: all var(--transition);
-}
-.lang-btn:hover {
-  border-color: var(--text-secondary);
-}
-.lang-btn.active {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
 }
 
 .article-content {
@@ -784,141 +547,6 @@ main {
   margin: 2rem 0;
 }
 
-/* Bilingual modes */
-.article-content.english blockquote {
-  border-left: none;
-  padding: 0;
-  margin: 0 0 1.2rem;
-  background: none;
-  color: var(--text);
-  font-size: inherit;
-  font-style: normal;
-}
-.article-content.english p {
-  display: none;
-}
-.article-content.english blockquote + p {
-  display: none;
-}
-.article-content.chinese blockquote {
-  display: none;
-}
-.article-content.bilingual blockquote {
-  margin-bottom: 0.3rem;
-  font-style: normal;
-  opacity: 0.7;
-  font-size: 0.95rem;
-}
-
-/* ---- Page Title ---- */
-
-.page-title-row {
-  margin-bottom: 2.5rem;
-}
-.page-title {
-  font-family: var(--font-serif);
-  font-size: 2rem;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  margin-bottom: 0.35rem;
-}
-.page-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-tertiary);
-}
-
-/* ---- Curation / Episodes ---- */
-
-.episode {
-  padding: 1.75rem 0;
-  border-bottom: 1px solid var(--border);
-  animation: fadeSlideIn 0.4s ease-out both;
-}
-.episode:first-child {
-  border-top: 1px solid var(--border);
-}
-.episode-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-.episode-header h3 {
-  font-family: var(--font-serif);
-  font-size: 1.15rem;
-  font-weight: 400;
-  color: var(--text);
-}
-.episode-date {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-}
-
-.audio-player {
-  margin-bottom: 1rem;
-}
-.audio-player audio {
-  width: 100%;
-  height: 40px;
-  border-radius: var(--radius);
-}
-.speed-controls {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
-}
-.speed-controls button {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 0.2rem 0.6rem;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
-  transition: all var(--transition);
-}
-.speed-controls button:hover {
-  border-color: var(--text-secondary);
-  color: var(--text-secondary);
-}
-.speed-controls button.speed-active {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
-}
-
-.episode-summary {
-  font-size: 0.9rem;
-  line-height: 1.65;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-}
-
-.episode-articles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.episode-link {
-  font-size: 0.7rem;
-  color: var(--accent);
-  background: var(--accent-subtle);
-  padding: 0.2rem 0.55rem;
-  border-radius: 4px;
-  text-decoration: none;
-  font-family: var(--font-sans);
-  letter-spacing: 0.02em;
-  transition: all var(--transition);
-}
-.episode-link:hover {
-  background: var(--accent);
-  color: white;
-}
-
 /* ---- Footer ---- */
 
 footer {
@@ -963,66 +591,22 @@ footer {
     width: 100%;
   }
   .article-item {
-    gap: 0.85rem;
-  }
-  .article-date {
-    width: 2.75rem;
-  }
-  .article-date .day {
-    font-size: 1.3rem;
+    padding: 1rem 0;
   }
   .article-header h1 {
     font-size: 1.6rem;
-  }
-  .page-title {
-    font-size: 1.6rem;
-  }
-  .episode-header {
-    flex-direction: column;
-    gap: 0.25rem;
   }
 }
 `;
 }
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 // Main build
-const articles = await readJSON('data/articles.json');
-const episodes = await readJSON('data/episodes.json');
-
-// Ensure output dirs
-await mkdir(resolveDataPath('docs/data/articles'), { recursive: true });
-
-// Build per-article JSON files
-for (const article of articles.filter(a => a.status === 'ready')) {
-  const data = await buildArticleData(article);
-  const outPath = resolveDataPath(`docs/data/articles/${article.id}.json`);
-  await writeFile(outPath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-// Write site data indexes
-await writeFile(
-  resolveDataPath('docs/data/articles.json'),
-  JSON.stringify(articles, null, 2),
-  'utf-8'
-);
-await writeFile(
-  resolveDataPath('docs/data/episodes.json'),
-  JSON.stringify(episodes, null, 2),
-  'utf-8'
-);
+const articles = await readJSON('docs/articles.json');
 
 // Generate HTML pages
-await writeFile(resolveDataPath('docs/index.html'), generateIndexHTML(articles, episodes), 'utf-8');
+await mkdir(resolveDataPath('docs'), { recursive: true });
+await writeFile(resolveDataPath('docs/index.html'), generateIndexHTML(articles), 'utf-8');
 await writeFile(resolveDataPath('docs/article.html'), generateArticleHTML(), 'utf-8');
-await writeFile(resolveDataPath('docs/curation.html'), generateCurationHTML(), 'utf-8');
 await writeFile(resolveDataPath('docs/style.css'), generateCSS(), 'utf-8');
 
-console.log(`Built site: ${articles.filter(a => a.status === 'ready').length} articles, ${episodes.length} episodes`);
+console.log(`Built site: ${articles.filter(a => a.status === 'ready').length} articles`);

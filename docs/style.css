@@ -19,11 +19,9 @@
   --accent: #c45d3e;
   --accent-hover: #a84b30;
   --accent-subtle: rgba(196, 93, 62, 0.08);
-  --card-bg: #f5f1ed;
   --blockquote-bg: #f0ece7;
   --blockquote-border: #d4cdc5;
   --shadow-sm: 0 1px 2px rgba(44, 40, 37, 0.04);
-  --shadow-md: 0 4px 12px rgba(44, 40, 37, 0.06);
   --radius: 8px;
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -39,11 +37,9 @@
     --accent: #e07a5c;
     --accent-hover: #e99479;
     --accent-subtle: rgba(224, 122, 92, 0.1);
-    --card-bg: #242120;
     --blockquote-bg: #282422;
     --blockquote-border: #3d3733;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -91,30 +87,6 @@ header {
 }
 .logo:hover {
   color: var(--accent);
-}
-
-nav {
-  display: flex;
-  gap: 1.5rem;
-}
-nav a {
-  font-size: 0.875rem;
-  font-weight: 400;
-  color: var(--text-secondary);
-  text-decoration: none;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  padding-bottom: 2px;
-  border-bottom: 1.5px solid transparent;
-  transition: all var(--transition);
-}
-nav a:hover {
-  color: var(--text);
-}
-nav a.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-  font-weight: 500;
 }
 
 /* ---- Main ---- */
@@ -211,7 +183,7 @@ main {
 
 .article-item {
   display: flex;
-  gap: 1.25rem;
+  flex-direction: column;
   padding: 1.25rem 0;
   border-bottom: 1px solid var(--border);
   animation: fadeSlideIn 0.4s ease-out both;
@@ -228,35 +200,6 @@ main {
   border-radius: var(--radius);
 }
 
-.article-date {
-  flex-shrink: 0;
-  width: 3.5rem;
-  text-align: right;
-  padding-top: 0.15rem;
-}
-.article-date .day {
-  display: block;
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  font-weight: 300;
-  line-height: 1;
-  color: var(--text);
-  letter-spacing: -0.02em;
-}
-.article-date .month-year {
-  display: block;
-  font-size: 0.65rem;
-  color: var(--text-tertiary);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-top: 0.2rem;
-}
-
-.article-body {
-  flex: 1;
-  min-width: 0;
-}
-
 .article-title {
   font-family: var(--font-serif);
   font-size: 1.1rem;
@@ -266,6 +209,7 @@ main {
   text-decoration: none;
   transition: color var(--transition);
   display: block;
+  margin-bottom: 0.3rem;
 }
 .article-title:hover {
   color: var(--accent);
@@ -290,26 +234,6 @@ main {
 }
 .meta a:hover {
   color: var(--accent-hover);
-}
-.lang {
-  background: var(--accent-subtle);
-  color: var(--accent);
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.summary {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-top: 0.5rem;
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .empty {
@@ -351,31 +275,6 @@ main {
   background: var(--accent);
   margin-bottom: 2rem;
   border-radius: 1px;
-}
-
-.lang-toggle {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 1rem;
-}
-.lang-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 0.3rem 0.75rem;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  transition: all var(--transition);
-}
-.lang-btn:hover {
-  border-color: var(--text-secondary);
-}
-.lang-btn.active {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
 }
 
 .article-content {
@@ -464,141 +363,6 @@ main {
   margin: 2rem 0;
 }
 
-/* Bilingual modes */
-.article-content.english blockquote {
-  border-left: none;
-  padding: 0;
-  margin: 0 0 1.2rem;
-  background: none;
-  color: var(--text);
-  font-size: inherit;
-  font-style: normal;
-}
-.article-content.english p {
-  display: none;
-}
-.article-content.english blockquote + p {
-  display: none;
-}
-.article-content.chinese blockquote {
-  display: none;
-}
-.article-content.bilingual blockquote {
-  margin-bottom: 0.3rem;
-  font-style: normal;
-  opacity: 0.7;
-  font-size: 0.95rem;
-}
-
-/* ---- Page Title ---- */
-
-.page-title-row {
-  margin-bottom: 2.5rem;
-}
-.page-title {
-  font-family: var(--font-serif);
-  font-size: 2rem;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  margin-bottom: 0.35rem;
-}
-.page-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-tertiary);
-}
-
-/* ---- Curation / Episodes ---- */
-
-.episode {
-  padding: 1.75rem 0;
-  border-bottom: 1px solid var(--border);
-  animation: fadeSlideIn 0.4s ease-out both;
-}
-.episode:first-child {
-  border-top: 1px solid var(--border);
-}
-.episode-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-.episode-header h3 {
-  font-family: var(--font-serif);
-  font-size: 1.15rem;
-  font-weight: 400;
-  color: var(--text);
-}
-.episode-date {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-}
-
-.audio-player {
-  margin-bottom: 1rem;
-}
-.audio-player audio {
-  width: 100%;
-  height: 40px;
-  border-radius: var(--radius);
-}
-.speed-controls {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
-}
-.speed-controls button {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 0.2rem 0.6rem;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
-  transition: all var(--transition);
-}
-.speed-controls button:hover {
-  border-color: var(--text-secondary);
-  color: var(--text-secondary);
-}
-.speed-controls button.speed-active {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
-}
-
-.episode-summary {
-  font-size: 0.9rem;
-  line-height: 1.65;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-}
-
-.episode-articles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.episode-link {
-  font-size: 0.7rem;
-  color: var(--accent);
-  background: var(--accent-subtle);
-  padding: 0.2rem 0.55rem;
-  border-radius: 4px;
-  text-decoration: none;
-  font-family: var(--font-sans);
-  letter-spacing: 0.02em;
-  transition: all var(--transition);
-}
-.episode-link:hover {
-  background: var(--accent);
-  color: white;
-}
-
 /* ---- Footer ---- */
 
 footer {
@@ -643,22 +407,9 @@ footer {
     width: 100%;
   }
   .article-item {
-    gap: 0.85rem;
-  }
-  .article-date {
-    width: 2.75rem;
-  }
-  .article-date .day {
-    font-size: 1.3rem;
+    padding: 1rem 0;
   }
   .article-header h1 {
     font-size: 1.6rem;
-  }
-  .page-title {
-    font-size: 1.6rem;
-  }
-  .episode-header {
-    flex-direction: column;
-    gap: 0.25rem;
   }
 }

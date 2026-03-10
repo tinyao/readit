@@ -16,7 +16,7 @@ try {
   process.exit(1);
 }
 
-const articles = await readJSON('data/articles.json');
+const articles = await readJSON('docs/articles.json');
 
 // Duplicate check
 const existing = articles.find(a => a.url === url);
@@ -40,6 +40,6 @@ const article = {
 };
 
 articles.push(article);
-await writeJSON('data/articles.json', articles);
+await writeJSON('docs/articles.json', articles);
 
 console.log(`Saved article: ${article.id} (${url})`);
